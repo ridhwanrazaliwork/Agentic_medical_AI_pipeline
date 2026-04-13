@@ -121,6 +121,9 @@ The system executes three tasks autonomously with decision-making at each step:
 
 ## UI Workflow
 
+### Main Dashboard
+![Main Page - Dataset Stats](src/images/mainpage_dataset_stats.png)
+
 The Streamlit interface displays results in 4 tabs:
 
 1. **Data Tab** - Dataset overview, missing value analysis
@@ -128,6 +131,7 @@ The Streamlit interface displays results in 4 tabs:
 3. **Cleaning Report Tab** - Imputation strategy + before/after statistics
 4. **LLM vs SLM Tab** - Classification comparison and agreement rates
 
+### Tab Views
 ![Dataset Preview](src/images/dataset_preview.png)
 ![EDA Analysis](src/images/eda_preview.png)
 ![LLM Insights](src/images/llm_insights_from_charts.png)
