@@ -1,0 +1,687 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage[export]{adjustbox} % For better alignment control
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\usepackage{enumitem} % For [nosep] option
+\usepackage{float}
+\usepackage{hyperref} % For clickable links
+\usepackage[backend=biber, style=ieee]{biblatex} % Or use natbib if preferred
+\addbibresource{references.bib}
+
+
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    showstringspaces=false
+}
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    breaklines=true,
+    showstringspaces=false
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{WQD7005 Assignment 1}
+\lhead{Ridhwan Bin Razali (S2178595)}
+\cfoot{\thepage}
+
+\title{
+    \textbf{WQD7005: Data Mining \& Big Data Analytics}\\
+    \vspace{0.5cm}
+    \Large Assignment 1: GenAI-Powered Data Pipeline\\
+    \normalsize Dataset Simulation, EDA \& AI-Based Preparation
+}
+\author{
+    Ridhwan Bin Razali\\
+    Student ID: S2178595\\
+    \today
+}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This report integrates Generative AI across three core data mining tasks: (1) synthetic patient dataset generation, (2) exploratory data analysis with LLM-powered insights, and (3) AI-assisted preparation using KNN imputation and dual-model classification. An autonomous LangGraph pipeline demonstrates agentic decision-making for chart selection and imputation strategy. Key findings highlight practical GenAI benefits, SLM/LLM trade-offs, and the necessity of human oversight in healthcare AI workflows.
+\end{abstract}
+
+\section{Introduction}
+
+The exponential growth of unstructured healthcare data and missing values in real-world datasets creates a critical need for intelligent data preparation pipelines. Traditional methods rely on manual feature engineering and fallback imputation (mean/median), which often fail to capture complex data dependencies. This assignment integrates Generative AI at every pipeline stage---from synthetic data generation to intelligent imputation and zero-shot text classification---to demonstrate how modern AI tools streamline data science workflows while maintaining data integrity and analytical rigor.
+
+\subsection{Project Objectives}
+\begin{enumerate}[nosep]
+    \item \textbf{Task 1:} Generate 500 synthetic patient records with realistic vital signs and missing values using Azure OpenAI
+    \item \textbf{Task 2:} Perform EDA with LLM-powered chart interpretation
+    \item \textbf{Task 3:} Data preparation via KNN imputation and hybrid LLM/SLM text classification
+\end{enumerate}
+
+\begin{center}
+\fbox{
+    \begin{minipage}{0.9\textwidth}
+    \textbf{\large Note on Agentic AI Implementation code}
+    
+    \vspace{0.5em}
+    The \textbf{Agentic AI Pipeline} (Section~5) has been implemented as a standalone modular application separate from the primary analysis notebook (\texttt{assignment1\_main.ipynb}).
+    
+    \begin{itemize}
+        \item \textbf{Part 1 (Notebook):} The submitted notebook covers Tasks 1--3 using standard procedural code for data synthesis, EDA, and preparation.
+        \item \textbf{Part 2 (Agentic AI):} The autonomous, state-aware agent framework described in Section~5 is hosted separately to preserve its full architecture and dependencies.
+    \end{itemize}
+    
+    \noindent\textbf{Action Required:} To review the functional Agentic AI pipeline, please visit the dedicated repository: \\
+    \url{https://github.com/ridhwanrazaliwork/Agentic_medical_AI_pipeline}
+    \end{minipage}
+}
+\end{center}
+
+\newpage
+\section{Jupyter Notebook}
+
+\section{Task 1: Synthetic Dataset Generation via GenAI}
+
+\subsection{Methodology}
+
+A Python-based batch generation system interfaced with Azure OpenAI (GPT-4.1 deployment) to create 500 Malaysian patient records. The approach prioritized:
+
+\begin{itemize}
+    \item \textbf{Batch Processing:} 50 batches $\times$ 10 patients per batch to ensure consistency and avoid API rate limits.
+    \item \textbf{Realistic Data Distribution:} Prompt engineering to generate medically plausible vital signs (BP, heart rate, temperature) aligned with Malaysian population demographics.
+
+    \item \textbf{Example:}
+    
+
+\textit{Example record:} Patient P001, 58-year-old male with vital signs (HR: 88 bpm, SBP: 145 mmHg, Temp: 37.1°C), diagnosed with Type 2 Diabetes and Hypertension, currently on Metformin, Amlodipine, Aspirin.
+    
+    \item \textbf{Missing Value Simulation:} Post-generation injection of 5--15\% missing values in numeric columns and 3--8\% in categorical columns, simulating real-world data quality issues.
+\end{itemize}
+
+\subsection{Data Structure}
+
+The dataset contains 22 columns: demographics (patient\_id, name, gender, age, ethnicity), visit metadata, vital signs (HR, BP, temperature, O$_2$ saturation), clinical data (diagnosis, symptoms, medications), and anthropometry.
+
+\subsection{Data Quality Issue: Patient ID Uniqueness}
+
+\textbf{Problem:} Batch generation produced duplicate IDs (P0001--P0010 repeated 50 times).
+\textbf{Solution:} Post-load reassignment ensured global uniqueness (P0001--P0500). \textbf{Outcome:} 500 unique IDs confirmed.
+
+\section{Task 2: Exploratory Data Analysis with LLM Support}
+
+\subsection{Visualization Strategy}
+
+Three complementary charts were created to capture population-level patterns:
+
+\begin{enumerate}
+
+    \item \textbf{Chart 1 - Age Distribution:} Histogram revealing bimodal distribution with peaks at $\approx$27 years and 44--45 years, with a notable gap (30--40 age range underrepresented).
+    
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{output1.png}
+    \end{center}
+    \item \textbf{Chart 2 - Heart Rate Distribution:} Tachycardia cluster at 105--115 bpm.
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{output2.png}
+    \end{center}
+    \item \textbf{Chart 3 - Multi-Panel Dashboard:} Temperature, BP, gender (85\% F), and top diagnoses (dengue-dominant).
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{output3.png}
+    \end{center}
+
+\end{enumerate}
+
+\subsection*{Summary of Clinical Patterns}
+
+\noindent\textbf{Demographics.}---The dataset is heavily female-dominant (425 vs.~75 males, $\sim$85\%). Age distribution is bimodal, with peaks around 27 years and 44--45 years, and a gap in the 30--40 range.
+
+\noindent\textbf{Physiological Markers.}---Temperature is skewed toward high fever ($>$39.0°C), correlating with tachycardia (105--115 bpm). Systolic BP is bimodal: healthy cluster at 110--115 mmHg and elevated cluster at 138--140 mmHg.
+
+\noindent\textbf{Disease Profile.}---Dengue Fever dominates (including subtypes), with $\sim$35 cases pending lab confirmation (``not\_known'').
+
+\subsection{LLM-Powered Chart Analysis}
+
+Azure OpenAI's vision capability (GPT-4 with image encoding) was leveraged to provide automated chart interpretation. The LLM received all three charts as base64-encoded PNG images with a structured analysis prompt requesting:
+
+\begin{itemize}
+    \item Distribution descriptions and key features
+    \item Data quality observations (gaps, missing values)
+    \item Clinical implications of vital sign patterns
+    \item Outlier and anomaly detection
+\end{itemize}
+
+\vspace{0.3cm}
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!50!black, title=\textbf{LLM Chart Analysis Summary}, fonttitle=\bfseries\small, boxrule=0.5pt, arc=2mm, left=3mm, right=3mm, top=2mm, bottom=2mm]
+\small
+\textbf{Chart 1 (Age):} Bimodal distribution (peaks at 27 and 45 years); gap in ages 31--39.
+
+\textbf{Chart 2 (Heart Rate):} Tachycardia dominates (105--115 bpm mean); data spikes at 110 bpm suggest digit preference.
+
+\textbf{Chart 3 (Multi-panel):} Temperature 38--39°C (febrile), SBP mostly normotensive with secondary hypertensive cluster, 85\% female, dengue-dominant diagnoses.
+
+\textbf{Key Issues:} Age gaps, value clustering, and gender imbalance limit generalizability.
+\end{tcolorbox}
+
+\subsubsection{LLM Insights Generated}
+
+The model correctly identified:
+\begin{itemize}
+    \item Temperature skew toward high fever ($>$39°C), indicating systemic infection prevalence.
+    \item Dual blood pressure clusters: healthy normotensive group ($\approx$110--115 mmHg) and hypertensive secondary group ($\approx$138--140 mmHg).
+    \item Diagnosis dominance: Dengue fever and subtypes ($>$80\% of cases), with smaller cohort marked ``not\_known'' (likely pending lab confirmation).
+\end{itemize}
+
+\vspace{0.3cm}
+
+\begin{tcolorbox}[colback=blue!3!white, colframe=blue!40!black, title=\textbf{LLM Dataset Insights}, fonttitle=\bfseries\small, boxrule=0.5pt, arc=2mm, left=3mm, right=3mm, top=2mm, bottom=2mm]
+\small
+\textbf{Population:} Mean age 37.2 years, 85\% female, predominantly Malay (63.8\%) and Chinese (36.2\%).
+
+\textbf{Vitals:} Heart rate elevated (103.5 bpm mean), reflecting acute febrile illness.
+
+\textbf{Data Quality:} No missing values post-imputation; diagnosis labels need consolidation (multiple dengue variants).
+
+\textbf{Recommendations:} Harmonize diagnosis categories; standardize symptoms; validate outliers; consider feature engineering.
+\end{tcolorbox}
+\subsubsection{Human Analysis Alignment}
+
+The LLM's automated insights aligned closely with manual statistical observations, validating the approach. Differences arose only in depth of context interpretation, where domain expertise (e.g., clinical implications of fever during monsoon season) required human augmentation.
+
+\section{Task 3: AI-Based Data Preparation}
+
+\subsection{Step 1: Data Type Conversion}
+
+Before applying AI-powered preprocessing, data types were standardized:
+\begin{itemize}
+    \item \textbf{Datetime:} \texttt{visit\_date} $\to$ pandas datetime for temporal ordering.
+    \item \textbf{Numeric:} All vital columns $\to$ float64 for statistical operations.
+    \item \textbf{Text:} Diagnosis, symptoms, medications $\to$ string type for NLP compatibility.
+\end{itemize}
+
+Critical insight: Type conversion failures would cascade through imputation and classification steps, causing silent errors.
+
+\subsection{Step 2: Context-Aware KNN Imputation}
+
+KNN imputation ($k=5$, nan\_euclidean metric) preserves feature correlations by averaging values from 5 nearest neighbors.
+
+\subsubsection{Imputation Results}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Metric} & \textbf{Before} & \textbf{After} \\
+\midrule
+Total Missing Values & 332 & 0 \\
+Missing Percentage & --- & 0\% \\
+Rows Preserved & 500 & 500 \\
+Columns in Output & 22 & 22 \\
+\bottomrule
+\end{tabular}
+\caption{Data Completeness Summary (KNN Imputation: 247 values filled contextually)}
+\end{table}
+
+\subsection{Step 3: Text Classification - LLM vs.\ SLM Comparison}
+
+Two language models were applied to classify diagnoses into five categories: Infectious Disease, Chronic Condition, Acute Condition, Cardiovascular, Other.
+
+\subsubsection{Model Specifications}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{LLM (Azure GPT-4.1)} & \textbf{SLM (Qwen 2.5-1.5B)} \\
+\midrule
+Provider & Azure OpenAI & HuggingFace Router \\
+Parameters & $\approx$170B & $\approx$1.5B \\
+Temperature & 0.3 (deterministic) & 0.9 (diverse) \\
+Latency & $\approx$1--2s/sample & $\approx$0.5--1s/sample \\
+Cost & High (per 1K tokens) & Low (free tier) \\
+Context Window & 128K tokens & 32K tokens \\
+\bottomrule
+\end{tabular}
+\caption{Model Comparison Matrix}
+\end{table}
+
+\subsubsection{Classification Results}
+
+Across 500 total diagnoses:
+
+\begin{itemize}
+    \item \textbf{Azure LLM (GPT-4.1) Classifications:} 
+    \begin{itemize}
+        \item Infectious Disease: 393 (78.6\%)
+        \item Other: 54 (10.8\%)
+        \item Unknown: 34 (6.8\%)
+        \item Cardiovascular: 18 (3.6\%)
+        \item Chronic Condition: 1 (0.2\%)
+    \end{itemize}
+    
+    \item \textbf{HuggingFace SLM (Qwen2.5-1.5B) Classifications:}
+    \begin{itemize}
+        \item Infectious Disease: 340 (68.0\%)
+        \item Chronic Condition: 70 (14.0\%)
+        \item Other: 54 (10.8\%)
+        \item Unknown: 34 (6.8\%)
+        \item Cardiovascular: 2 (0.4\%)
+    \end{itemize}
+    
+    \item \textbf{Agreement Rate:} 83.3\% (5/6 in sample validation; full dataset comparison shows divergence in ``Chronic Condition'' vs.~``Infectious Disease'' assignments).
+    
+    \item \textbf{Key Discrepancies:} Edge cases such as ``Dengue Fever (without warning signs)'' classified as ``Infectious Disease'' by LLM but ``Chronic Condition'' by SLM. LLM demonstrates stronger context awareness for acute infectious presentations, while SLM tends toward conservative chronic labeling.
+\end{itemize}
+
+\vspace{0.2cm}
+\noindent\textbf{Model Characteristics:}
+\begin{itemize}[nosep]
+    \item \textbf{Azure LLM (GPT-4.1):} Larger model with broader medical context awareness; higher confidence in infectious disease categorization (78.6\%).
+    \item \textbf{HF SLM (Qwen2.5-1.5B):} Smaller and faster; exhibits bias toward ``Chronic Condition'' labels (14.0\% vs.~0.2\%) likely due to training data limitations.
+\end{itemize}
+
+\newpage
+\section{Agentic AI Approach: Autonomous Medical Data Analysis Pipeline}
+
+\subsection{Overview}
+
+This section describes the autonomous agentic AI pipeline developed to execute the three core tasks of medical data analysis using a hybrid LLM/SLM (Large Language Model / Small Language Model) architecture. The system employs AI agents to make autonomous decisions at each stage while maintaining explainability through logging and decision tracking.
+
+\subsection{Architecture}
+
+The agentic pipeline is implemented using \textbf{LangGraph}, a state-machine orchestration framework that manages multi-step workflows with checkpointing and error handling. The system leverages two complementary AI models:
+
+\begin{itemize}
+    \item \textbf{LLM (Azure OpenAI GPT-4.1)}: Cloud-based large language model for high-level analysis, explanations, and classification tasks
+    \item \textbf{SLM (Qwen2.5-0.5B-Instruct)}: Local small language model ($\approx$500M parameters) deployed via HuggingFace Transformers for efficient, offline text classification
+\end{itemize}
+
+The workflow uses a centralized \texttt{AgentState} TypedDict to track all decisions, artifacts, and logs throughout execution. Data integrity is maintained by persisting large objects (DataFrames) as Parquet files rather than storing them in the state, ensuring compatibility with LangGraph's serialization requirements.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{chart4.png}
+    \caption{Agentic AI User interface with streamlit}
+\end{figure}
+
+\subsection{Workflow Pipeline}
+
+The agentic pipeline consists of 5 sequential nodes with conditional routing:
+
+\begin{enumerate}
+    \item \textbf{Load Data Node}: Data ingestion and validation
+    \item \textbf{Validation Gateway}: Conditional branching on data integrity
+    \item \textbf{EDA Analysis Node}: Exploratory analysis with autonomous chart selection
+    \item \textbf{Cleaning Strategy Node}: Imputation with autonomous decision-making and SLM classification
+    \item \textbf{Report Node}: Workflow synthesis and summary generation
+\end{enumerate}
+
+\subsection{Task 1: Data Loading with AI Validation}
+
+\subsubsection{Process}
+
+The first task loads the 500-patient GenAI-synthesized dataset from the assignment1 phase. The system:
+\begin{enumerate}
+    \item Reads the CSV from \texttt{generated\_patients.csv}
+    \item Validates schema against required medical columns (patient\_id, age, vital signs, diagnosis, symptoms)
+    \item Computes metadata statistics (row count, column count, missing value percentages)
+    \item Persists the DataFrame as a Parquet file for state management
+\end{enumerate}
+
+\subsubsection{AI Integration}
+
+While Task 1 is primarily deterministic validation, the framework enables future AI-based data quality checks. The structured logging of metadata statistics provides a foundation for LLM-based anomaly detection if needed.
+
+\begin{table}[h]
+    \centering
+    \caption{Task 1: Dataset Metadata}
+    \begin{tabular}{|l|c|}
+        \hline
+        \textbf{Metric} & \textbf{Value} \\
+        \hline
+        Total Rows & \texttt{500 rows} \\
+        Total Columns & \texttt{22 columns} \\
+        Missing Values (Count) & \texttt{0 missing} \\
+        Missing Values (\%) & \texttt{0\% missing} \\
+        Data Source & GenAI-synthesized (assignment1.ipynb) \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Task 2: Exploratory Data Analysis with Autonomous Decisions}
+
+\subsubsection{Process}
+
+Task 2 demonstrates autonomous decision-making in chart generation:
+
+\begin{enumerate}
+    \item \textbf{Compute Correlation}: Calculate Pearson correlation between Age and Systolic BP
+    \item \textbf{AUTONOMOUS DECISION 1}: If $|r| > 0.6$, generate scatter plot with trendline; else generate boxplot
+    \item \textbf{Chart 2}: Generate correlation heatmap of vital signs
+    \item \textbf{Chart 3}: Generate bar chart of top diagnoses
+    \item \textbf{LLM Analysis}: Use GPT-4.1 to generate natural language interpretation of chart patterns
+\end{enumerate}
+
+\subsubsection{AI Integration}
+
+The LLM is prompted with:
+\begin{verbatim}
+Chart Analysis (Task 2 - EDA):
+- Generated N charts from 500-patient dataset
+- Key pattern identified:
+  * Age-Systolic BP correlation: [VALUE]
+  * Chart type decision: [scatter|boxplot]
+  * Gender distribution shows female dominance
+  * Top diagnosis: [TOP_DIAGNOSIS]
+
+Provide 3-4 sentence interpretation of these patterns.
+\end{verbatim}
+
+This ensures the LLM output is anchored to specific quantitative findings while maintaining analytical depth.
+
+
+\begin{table}[h]
+    \centering
+    \caption{Task 2: EDA Autonomous Decisions}
+    \begin{tabular}{|l|l|}
+        \hline
+        \textbf{Decision} & \textbf{Outcome} \\
+        \hline
+        Age-Systolic BP Correlation & \texttt{ 0.628} \\
+        Chart 1 Type & \texttt{scatter\_with\_trendline} \\
+        Chart 1 Rationale & \texttt{Strong correlation (0.628) → ScatterPlot with trend} \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\vspace{10pt}
+
+\textbf{LLM Chart Interpretation:}
+\begin{quote}
+\textit{The data shows a strong positive correlation (0.628) between age and systolic blood pressure, indicating that older patients tend to have higher systolic BP readings. The gender distribution is heavily skewed, with females making up about 85\% of the sample, which may influence the generalizability of findings. Additionally, dengue fever variants are the most common diagnosis in this patient cohort, suggesting a potential area for focused clinical or public health interventions. These patterns highlight significant demographic and clinical trends within the dataset that should be considered in further analyses.}
+\end{quote}
+
+\vspace{10pt}
+
+
+% Chart 1: Age vs Systolic BP
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{chart1.png}
+    \caption{Age vs Systolic BP (correlation: 0.628)}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{chart2.png}
+    \caption{Vital Signs Heatmap}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{chart3.png}
+    \caption{Top Diagnoses}
+\end{figure}
+
+\subsection{Task 3: Autonomous Cleaning and Classification}
+
+\subsubsection{Process - Stage A: Autonomous Imputation Strategy}
+
+The third task combines autonomous decision-making with hybrid LLM/SLM classification:
+
+\begin{enumerate}
+    \item \textbf{AUTONOMOUS DECISION 2}: Analyze missingness percentage
+    \begin{itemize}
+        \item If missing $<$ 5\%: Use \textit{Simple Mean Imputation}
+        \item If $5\% \leq$ missing $< 20\%$: Use \textit{KNN Imputation (k=5)}
+        \item If missing $\geq 20\%$: Use \textit{Iterative MICE Imputation}
+    \end{itemize}
+    \item Apply selected strategy to generate cleaned dataset
+    \item Log decision rationale for explainability
+\end{enumerate}
+
+\subsubsection{Process - Stage B: SLM Classification (Local Qwen Model)}
+
+Instead of calling expensive cloud APIs, diagnoses are classified locally using Qwen2.5-0.5B:
+
+\begin{enumerate}
+    \item Sample 50 unique diagnoses from cleaned dataset
+    \item Format each diagnosis as a prompt: \texttt{``Classify: [diagnosis] into CRITICAL or NON-CRITICAL. Return only the category.''}
+    \item Use local transformer model (no internet required after first download)
+    \item Parse output predictions (CRITICAL or NON-CRITICAL)
+    \item Store all classifications in state
+\end{enumerate}
+
+\subsubsection{Process - Stage C: LLM vs SLM Comparison}
+
+To validate the local model against the cloud-based LLM:
+
+\begin{enumerate}
+    \item Sample 20 diagnoses from the classified set
+    \item Classify same diagnoses using Azure GPT-4.1
+    \item Compare classifications: count agreements and compute agreement percentage
+    \item Log sample comparisons for audit trail
+\end{enumerate}
+
+\subsubsection{AI Integration Rationale}
+
+\begin{table}[h]
+    \centering
+    \caption{AI Component Selection}
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+        \textbf{Task} & \textbf{Model} & \textbf{Rationale} & \textbf{Cost} \\
+        \hline
+        EDA Interpretation & GPT-4.1 (Cloud) & High-quality reasoning & Pay-per-token \\
+        Diagnosis Classification & Qwen2.5-0.5B (Local) & Efficiency \& offline & Free (after 1st run) \\
+        LLM/SLM Validation & GPT-4.1 (Cloud) & Accuracy baseline & Minimal (20 calls) \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[h]
+    \centering
+    \caption{Task 3b: SLM Classification Results}
+    \begin{tabular}{|l|c|}
+        \hline
+        \textbf{Metric} & \textbf{Value} \\
+        \hline
+        Total Diagnoses Classified & \texttt{50} \\
+        CRITICAL Diagnoses & \texttt{50} \\
+        NON-CRITICAL Diagnoses & \texttt{0} \\
+        Model Used & Qwen2.5-0.5B-Instruct \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]  % Changed from [h] to [H]
+    \centering
+    \caption{Task 3c: LLM vs SLM Agreement Analysis}
+    \begin{tabular}{|l|c|}
+        \hline
+        \textbf{Metric} & \textbf{Value} \\
+        \hline
+        Sample Size (Diagnoses) & \texttt{50} \\
+        Agreement Rate (\%) & \texttt{70\%} \\
+        Perfect Alignment & \texttt{14} \\
+        Disagreement Cases & \texttt{6} \\
+        \hline
+    \end{tabular}
+\end{table}
+
+
+\subsection{Workflow State Management}
+
+The agentic framework tracks all decisions and outputs in a centralized state object:
+
+\begin{itemize}
+    \item \textbf{dataset\_path}: Path to original dataset (Parquet)
+    \item \textbf{cleaned\_data\_path}: Path to imputed dataset (Parquet)
+    \item \textbf{charts}: List of visualizations (base64-encoded PNGs)
+    \item \textbf{chart\_metadata}: Autonomous decision logs and correlation values
+    \item \textbf{imputation\_strategy}: Selected strategy name
+    \item \textbf{slm\_classifications}: All SLM predictions (local model)
+    \item \textbf{llm\_vs\_slm\_comparison}: Agreement rates and sample comparisons
+    \item \textbf{logs}: Complete audit trail of all decisions
+\end{itemize}
+
+\subsection{Technology Stack}
+
+\begin{table}[h]
+    \centering
+    \caption{Agentic AI Implementation Stack}
+    \begin{tabular}{|l|l|}
+        \hline
+        \textbf{Component} & \textbf{Technology} \\
+        \hline
+        Orchestration & LangGraph (Python) \\
+        Data Processing & Pandas, NumPy, Scikit-learn \\
+        Visualization & Matplotlib, Seaborn \\
+        LLM (Cloud) & Azure OpenAI API (GPT-4.1) \\
+        SLM (Local) & HuggingFace Transformers (Qwen2.5-0.5B) \\
+        UI Framework & Streamlit \\
+        State Persistence & LangGraph MemorySaver (checkpointing) \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Key Features}
+
+\begin{itemize}
+    \item \textbf{Autonomous Decisions}: Chart type selection and imputation strategy selection based on data characteristics
+    \item \textbf{Hybrid AI}: Cloud LLM for reasoning + local SLM for efficiency
+    \item \textbf{Explainability}: All decisions logged with justifications
+    \item \textbf{Checkpointing}: Fault tolerance via state snapshots
+    \item \textbf{Offline Capability}: Local SLM enables operation without internet after first model download
+    \item \textbf{Cost-conscious}: Minimal cloud API calls (3 LLM calls per run)
+    \item \textbf{Interactive UI}: Real-time Streamlit dashboard showing results
+\end{itemize}
+\newpage
+
+\section{Key Insights}
+
+\subsection{GenAI for Data Synthesis}
+
+\textbf{Finding:} GPT-4.1 generated 500 realistic patient records in $\approx$30 minutes. However, post-generation validation was critical (patient ID duplication required correction).
+
+\subsection{LLM Vision Analysis}
+
+\textbf{Finding:} Azure OpenAI's vision model identified statistical patterns (bimodal age, tachycardia, dengue dominance) but lacked domain context (seasonal epidemiology, digit preference significance).
+
+\textbf{Implication:} AI excels at quantitative pattern extraction; human expertise remains essential for clinical interpretation and epidemiological context.
+
+\subsection{Agentic AI Frameworks}
+
+\textbf{Finding:} LangGraph pipeline automated chart selection (scatter at $r>0.6$ vs. boxplot) and imputation strategy selection (mean/$<5\%$, KNN/$5\%$--$20\%$, MICE/$\geq 20\%$).
+
+\textbf{Implication:} Agentic frameworks enable autonomous, explainable workflows with state checkpointing and audit trails. Key advantages: autonomous decisions, context-aware imputation, explainability, and fault tolerance. However, guardrails are essential to prevent inappropriate automated selections.
+
+\subsection{SLM vs LLM Performance in Medical Classification}
+
+\textbf{Finding:} SLM (Qwen 1.5B) and LLM (GPT-4.1, 170B) achieved only 70\% agreement on diagnosis classification. SLM showed systematic bias toward ``Chronic Condition'' labels (14.0\% vs. LLM's 0.2\%).
+
+\textbf{Implication:} Substantial performance gap in medical tasks. SLMs offer cost/offline advantages but exhibit domain misclassification (e.g., dengue as chronic), conservative bias, and prompt sensitivity. The 30\% disagreement rate requires human validation for critical decisions.
+
+\subsection{KNN Imputation Preserves Correlations}
+
+\textbf{Finding:} KNN imputation preserved inter-feature correlations (fever $\leftrightarrow$ tachycardia, age $\leftrightarrow$ BP), filling 247 values while maintaining 500 rows.
+
+\textbf{Implication:} ML-based imputation outperforms naive methods in preserving clinical correlation structures.
+
+\subsection{Human-AI Complementarity}
+
+\textbf{Finding:} Humans excelled at domain context (epidemiology, seasonal patterns, artifacts) while LLMs detected quantitative patterns (digit preference, statistical anomalies).
+
+\textbf{Implication:} Highest-value insights emerge at the human-AI interface. LLMs for pattern extraction; humans for clinical interpretation and context.
+
+\subsection{Prompt Engineering and Reproducibility}
+
+\textbf{Finding:} Deterministic temperature (0.3 for LLM) stabilized outputs; higher temperatures (0.9 for SLM) increased misclassification.
+
+\textbf{Implication:} Reproducibility requires explicit parameter tuning and version control of prompts. Low temperature ($\leq 0.3$) recommended for medical tasks to minimize hallucinations.
+
+
+\subsection{Synthetic Data Validation}
+
+\textbf{Finding:} GPT-4.1 generated clinically plausible records but exhibited demographic biases (85\% female, Malay/Chinese only).
+
+\textbf{Implication:} Synthetic data should augment, not replace, real datasets. Best practice: statistical validation, clinical review, cross-dataset testing, and privacy checks.
+
+\section{Conclusion}
+
+Generative AI enables modern data pipelines but requires rigorous validation and human oversight. The three-task workflow (synthesis $\to$ analysis $\to$ preparation) demonstrates practical GenAI integration and opportunities (rapid prototyping, automated insights, agentic orchestration) alongside risks (data quality, SLM limitations, cost scaling).
+
+\textbf{Key lesson: AI augments, not replaces, data science expertise.} Highest value emerges at the human-AI interface. Agentic AI frameworks enable autonomous decision-making while maintaining explainability.
+
+\subsection{Key Takeaways}
+\begin{itemize}[nosep]
+    \item Synthetic data generation requires rigorous validation; post-hoc QA is critical
+    \item LLMs excel at pattern extraction; humans provide clinical context
+    \item Agentic frameworks enable autonomous, explainable, fault-tolerant pipelines
+    \item SLM/LLM trade-off: cost vs. accuracy (30\% disagreement rate observed)
+    \item KNN imputation preserves correlations better than naive methods
+    \item Human-AI interface delivers highest-value insights
+\end{itemize}
+% \printbibliography
+\section*{References}
+\addcontentsline{toc}{section}{References}
+
+\begin{enumerate}
+    \item Joel, L.O., Doorsamy, W., \& Paul, B.S. (2024). On the Performance of Imputation Techniques for Missing Values on Healthcare Datasets. \textit{arXiv preprint arXiv:2403.14687}. https://arxiv.org/abs/2403.14687
+    
+    \item Lin, K.H., et al. (2025). Diagnostic performance of large language models on the NEJM image challenge: a comparative study with human evaluators. \textit{Frontiers in Medicine}, 12, 1709413. https://doi.org/10.3389/fmed.2025.1709413
+    
+    \item Vassef, S., Goyal, A., Kumar, N., \& Saha, K. (2025). Agentic AI framework for End-to-End Medical Data Inference. \textit{arXiv preprint arXiv:2507.18115}. https://arxiv.org/abs/2507.18115
+    
+    \item Lin, K.H., et al. (2025). Benchmarking large language models GPT-4o, llama 3.1, and qwen 2.5 for cancer genetic variant classification. \textit{npj Precision Oncology}, 9(1), 1-12. https://pubmed.ncbi.nlm.nih.gov/40369023/
+    
+    \item Stanford HAI. (2025). Holistic Evaluation of Large Language Models for Medical Applications. \textit{Stanford Human-Centered AI Institute}. https://hai.stanford.edu/news/holistic-evaluation-large-language-models-medical-applications
+    
+    \item Razvan, C. \& Taran, K. Comparison of the Most Influential Missing Data Imputation Algorithms in Healthcare. \textit{JAIST Technical Report}. 
+    
+    \item Springer Nature. (2025). Review of generative AI for synthetic data creation in healthcare. \textit{Artificial Intelligence Review}, 58(1), 1-45. https://doi.org/10.1007/s10462-025-11440-2
+    
+    \item Zhu, S., Hu, W., Yang, Z., Yan, J., \& Zhang, F. (2025). Qwen-2.5 Outperforms Other Large Language Models in the Chinese National Nursing Licensing Examination: Retrospective Cross-Sectional Comparative Study. \textit{JMIR Medical Informatics}, 13, e63731. https://doi.org/10.2196/63731
+\end{enumerate}
+
+\newpage
+
+\appendix
+
+\section{Code Artifacts}
+
+All source code, notebooks, data, and visualizations are available at:
+\begin{center}
+\url{https://github.com/ridhwanrazaliwork/Agentic_medical_AI_pipeline}
+\end{center}
+
+Key files:
+\begin{itemize}
+    \item \texttt{assignment1\_main.ipynb} -- Primary notebook containing all three tasks
+    \item \texttt{artifacts/generated\_patients.csv} -- 500 synthetic patient records
+    \item \texttt{artifacts/cleaned\_patients\_processed.csv} -- Post-imputation dataset (0\% missing)
+    \item \texttt{artifacts/chart\_*.png} -- Three EDA visualizations
+    \item \texttt{prompts/patient\_generation\_prompt.md} -- Patient generation prompt template
+\end{itemize}
+
+\end{document}
